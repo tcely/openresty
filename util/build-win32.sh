@@ -5,8 +5,8 @@ set -euo pipefail
 script_dir="$(dirname "$0")"
 script_name="$(basename "$0")"
 
-parent_dir="$(realpath -L -e "${script_dir}/..")"
-script_dir="$(realpath -L -e "${script_dir}")"
+parent_dir="$(realpath -L -e "..")"
+script_dir="$(realpath -L -e "${parent_dir}/${script_dir}")"
 
 PCRE='pcre2-10.47'
 ZLIB='zlib-1.3.2'

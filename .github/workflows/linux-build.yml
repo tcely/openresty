@@ -99,6 +99,7 @@ jobs:
           pushd download-cache
           cksum --help
           cksum --version
+          declare -p PATH
           if [ ! -x asfald-latest ]; then
             download_asfald
             download_asfald latest

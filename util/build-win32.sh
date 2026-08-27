@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PCRE=pcre2-10.47
 ZLIB=zlib-1.3.2

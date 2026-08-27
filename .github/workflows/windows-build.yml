@@ -55,12 +55,27 @@ jobs:
             zip
             ${{ matrix.toolchain }}
 
+      - name: Create cache directory
+        run: bash -c 'mkdir -p download-cache'
+
+      - name: Cache downloaded tarballs
+        uses: actions/cache@v6
+        with:
+          path: download-cache
+          key: windows-build-${{ matrix.host_arch }}-${{ hashFiles('util/mirror-tarballs') }}
+          restore-keys: |
+            windows-build-${{ matrix.host_arch }}-
+
       - name: Create source bundle
         run: bash util/mirror-tarballs
 
       - name: Build OpenResty
         run: |
           uname -a
+          pwd
+          ls util
           cd "openresty-$(./util/ver)"
+          pwd
+          ls util
           bash ./util/build-win32.sh
           ./nginx.exe -V 2>&1

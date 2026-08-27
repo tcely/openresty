@@ -41,13 +41,13 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Prepare cache directory
         run: mkdir -p download-cache
 
       - name: Cache downloaded tarballs
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: download-cache
           key: macos-build-${{ matrix.arch }}-${{ env.PCRE_VER }}-${{ env.OPENSSL_VER }}-${{ hashFiles('util/mirror-tarballs') }}
@@ -59,7 +59,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install dos2unix gd libpq mercurial wget
+          brew install curl dos2unix gd libpq mercurial wget
           echo "$(brew --prefix libpq)/bin" >> "$GITHUB_PATH"
 
       - name: Build PCRE2

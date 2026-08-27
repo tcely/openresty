@@ -97,6 +97,8 @@ jobs:
         run: |
           source .github/functions/bash/download_asfald.func.inc.sh
           pushd download-cache
+          cksum --help
+          cksum --version
           if [ ! -x asfald-latest ]; then
             download_asfald
             download_asfald latest

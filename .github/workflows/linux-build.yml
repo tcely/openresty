@@ -97,9 +97,13 @@ jobs:
         run: |
           source .github/functions/bash/download_asfald.func.inc.sh
           pushd download-cache
-          cksum --help
-          cksum --version
-          declare -p PATH
+
+          if [ ! -x shasum.py ]; then
+            curl -fsSRLo shasum.py 'https://github.com/meeb/tubesync/raw/refs/heads/main/tubesync/shasum.py'
+            chmod -v a+rx shasum.py
+          fi
+          install -v -D -t ~/.local/bin -m 0755 shasum.py
+          
           if [ ! -x asfald-latest ]; then
             download_asfald
             download_asfald latest
@@ -122,6 +126,13 @@ jobs:
         run: |
           source .github/functions/bash/download_asfald.func.inc.sh
           pushd download-cache
+
+          if [ ! -x shasum.py ]; then
+            curl -fsSRLo shasum.py 'https://github.com/meeb/tubesync/raw/refs/heads/main/tubesync/shasum.py'
+            chmod -v a+rx shasum.py
+          fi
+          install -v -D -t ~/.local/bin -m 0755 shasum.py
+
           if [ ! -x asfald-latest ]; then
             download_asfald
             download_asfald latest

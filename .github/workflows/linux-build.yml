@@ -42,13 +42,13 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Prepare cache directory
         run: mkdir -p download-cache
 
       - name: Cache downloaded tarballs
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: download-cache
           key: linux-build-${{ matrix.arch }}-${{ env.PCRE_VER }}-${{ env.OPENSSL_VER }}-${{ hashFiles('util/mirror-tarballs') }}

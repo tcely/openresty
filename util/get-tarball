@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+set -euo pipefail
+
+script_dir="$(dirname "$0")"
+script_name="$(basename "$0")"
+
+parent_dir="$(realpath -L -e "${script_dir}/..")"
 
 url="$1"
 outfile="$3"
 
-#root=$(readlink -f -- "$(dirname -- "$0")/..")
-root="$(perl -MCwd -e 'print Cwd::abs_path(shift)' "$(dirname -- "$0")/..")"
-work="${root}/work"
-cachefile="${work}/${outfile}"
+cachedir="${parent_dir}/download-cache/get-tarball"
+cachefile="${cachedir}/${outfile}"
 
-[ -d "${work}" ] || mkdir -v "${work}"
+[ -d "${cachedir}" ] || mkdir -v -p "${cachedir}"
 
 if [ -s "${cachefile}" ]; then
     cp -v "${cachefile}" "${outfile}"
 else
-    printf -- '%s\t%s\n' "${outfile}" "${url}" | tee -a "${work}/.urls"
-    curl --progress-bar --fail --location --remote-time --retry 3 -o "${outfile}" "${url}" && \
+    printf -- '%s\t%s\n' "${outfile}" "${url}" | tee -a "${cachedir}/.urls"
+    curl -sS --fail --location --remote-time --retry 3 -o "${outfile}" "${url}" && \
         cp -v "${outfile}" "${cachefile}"
 fi

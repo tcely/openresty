@@ -1,35 +1,51 @@
 #!/usr/bin/env bash
 
-PCRE=pcre2-10.47
-ZLIB=zlib-1.3.2
-OPENSSL=openssl-3.5.6
+set -euo pipefail
+
+script_dir="$(dirname "$0")"
+script_name="$(basename "$0")"
+
+parent_dir="$(realpath -L -e "${script_dir}/..")"
+
+PCRE='pcre2-10.47'
+ZLIB='zlib-1.3.2'
+OPENSSL='openssl-3.5.6'
 JOBS=12
 
-if [ ! -f ../$OPENSSL.tar.gz ]; then wget -O ../$OPENSSL.tar.gz https://github.com/openssl/openssl/releases/download/$OPENSSL/$OPENSSL.tar.gz; fi
-if [ ! -f ../$ZLIB.tar.gz ]; then wget -O ../$ZLIB.tar.gz http://zlib.net/$ZLIB.tar.gz; fi
-if [ ! -f ../$PCRE.tar.gz ]; then wget -O ../$PCRE.tar.gz https://github.com/PCRE2Project/pcre2/releases/download/$PCRE/$PCRE.tar.gz; fi
+download_and_extract() {
+    local outfile="${parent_dir}/${1}.tar.gz"
+    local url="${2}"
 
-rm -rf objs || exit 1
-mkdir -p objs/lib || exit 1
-cd objs/lib || exit 1
-ls ../../..
-tar -xf ../../../$OPENSSL.tar.gz || exit 1
-tar -xf ../../../$ZLIB.tar.gz || exit 1
-tar -xf ../../../$PCRE.tar.gz || exit 1
-cd ../..
+    if [ ! -s "${outfile}" ]; then
+        bash "${script_dir}/get-tarball" "${url}" -O "${outfile}"
+    fi
 
-cd objs/lib/$OPENSSL || exit 1
-patch -p1 < ../../../patches/openssl-3.5.5-sess_set_get_cb_yield.patch || exit 1
-cd ../../..
+    tar -xf "${outfile}"
+}
+
+[ ! -e objs ] || ( mv -f objs .remove.objs && rm -rf .remove.objs & )
+mkdir -p objs/lib && pushd objs/lib
+
+download_and_extract "${OPENSSL}" "https://github.com/openssl/openssl/releases/download/${OPENSSL}/${OPENSSL}.tar.gz"
+download_and_extract "${ZLIB}" "http://zlib.net/${ZLIB}.tar.gz"
+download_and_extract "${PCRE}" "https://github.com/PCRE2Project/pcre2/releases/download/${PCRE}/${PCRE}.tar.gz"
+ls
+
+popd
+ls
+
+pushd "objs/lib/${OPENSSL}"
+patch -p1 < "${parent_dir}/patches/openssl-3.5.5-sess_set_get_cb_yield.patch"
+popd
 
     #--with-openssl-opt="no-asm" \
 
 ./configure \
-    --with-cc=gcc \
-    --platform=msys \
+    --with-cc='gcc' \
+    --platform='msys' \
     --prefix= \
     --with-cc-opt='-DFD_SETSIZE=1024' \
-    --sbin-path=nginx.exe \
+    --sbin-path='nginx.exe' \
     --with-pcre-jit \
     --without-http_rds_json_module \
     --without-http_rds_csv_module \
@@ -55,12 +71,11 @@ cd ../../..
     --with-http_mp4_module \
     --with-http_gunzip_module \
     --with-select_module \
-    --with-luajit-xcflags="-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT" \
-    --with-pcre=objs/lib/$PCRE \
-    --with-zlib=objs/lib/$ZLIB \
-    --with-openssl=objs/lib/$OPENSSL \
-    -j$JOBS || exit 1
+    --with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' \
+    --with-pcre="objs/lib/${PCRE}" \
+    --with-zlib="objs/lib/${ZLIB}" \
+    --with-openssl="objs/lib/${OPENSSL}" \
+    "-j${JOBS}"
 
-make -j$JOBS || exit 1
+make "-j${JOBS}"
 exec make install
-

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+pushd >/dev/null "${GITHUB_WORKSPACE:-.}"
+source .github/functions/bash/cache.func.inc.sh
+popd >/dev/null
+
 set -euo pipefail
 
 script_dir="$(dirname "$0")"
@@ -10,7 +14,7 @@ parent_dir="$(realpath -L -e "${script_dir}/..")"
 url="$1"
 outfile="$3"
 
-cachedir="${parent_dir}/download-cache/get-tarball"
+cachedir="${CACHE_ROOT:-"${parent_dir}/download-cache"}/get-tarball"
 cachefile="${cachedir}/${outfile}"
 
 [ -d "${cachedir}" ] || mkdir -v -p "${cachedir}"

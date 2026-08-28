@@ -25,7 +25,7 @@ jobs:
             toolchain: mingw-w64-x86_64-toolchain
           - host_arch: arm64
             runner: windows-11-arm
-            msystem: CLANGARM64
+            msystem: MINGW64
             toolchain: mingw-w64-x86_64-toolchain
 
     defaults:
@@ -269,5 +269,5 @@ jobs:
         run: |
           uname -a
           cd "openresty-$(./util/ver)"
-          MSYSTEM=MINGW64 bash ./util/build-win32.sh
+          bash ./util/build-win32.sh
           ./nginx.exe -V 2>&1

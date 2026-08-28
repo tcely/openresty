@@ -90,6 +90,7 @@ download_asfald() {
     case "$(uname -s)" in
         (Darwin) os='apple-darwin' ;;
         (Linux) os='unknown-linux-musl' ;;
+        (MINGW64_NT-*) os='pc-windows-msvc.zip' ;;
     esac
     local arch
     case "$(uname -m)" in
@@ -110,13 +111,14 @@ download_asfald() {
             
             TMPDIR="$(realpath .)" \
                 ./asfald -o 'asfald-latest' -w -p '${path}/checksums.txt' -- "https://github.com/${owner}/${repo}/releases/latest/download/asfald-${arch}-${os}" && \
-                chmod -v 'a+rx' 'asfald-latest'
+                case "${os}" in (*.zip) mv -v 'asfald-latest' 'asfald-latest.zip' && return 0 ;; (*) chmod -v 'a+rx' 'asfald-latest' ;; esac
             local latest_digest="$(./asfald-latest --get-hash "https://github.com/${owner}/${repo}/releases/download/${latest_version}/asfald-${arch}-${os}")"
             verify_digest "${latest_digest}" 'asfald-latest' || return 1
             ;;
         (*)
             download_gh_release "${owner}" "${repo}" "asfald-${arch}-${os}" "${tag}" && \
                 curl -fsSL -- "${sums_url}" | check_sums 'sha256' - && \
+                case "${os}" in (*.zip) return 0 ;; (*) : ;; esac && \
                 mv -v "asfald-${arch}-${os}" 'asfald' && \
                 chmod -v 'a+rx' 'asfald'
             ;;

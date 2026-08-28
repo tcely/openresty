@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
@@ -43,6 +43,7 @@ jobs:
           update: true
           install: >-
             base-devel
+            curl
             dos2unix
             git
             make
@@ -54,6 +55,218 @@ jobs:
             zip
             ${{ matrix.toolchain }}
 
+      - name: Create cache directory
+        run: bash -c 'mkdir -p download-cache'
+
+      - name: Cache downloaded tarballs
+        uses: actions/cache@v6
+        with:
+          path: |
+            .openresty-cache
+            download-cache
+          key: windows-build-${{ matrix.host_arch }}-${{ github.run_id }}-${{ hashFiles('util/mirror-tarballs') }}
+          restore-keys: |
+            windows-build-${{ matrix.host_arch }}-
+
+      - name: Specify Downloads
+        shell: bash
+        env:
+          # Explicitly declared as hidden for consistency across steps
+          MANIFEST_PATH: '.download_manifest.jsonl'
+        run: |
+          source .github/functions/bash/cache.func.inc.sh
+          cache_pre
+
+          source .github/functions/bash/download_asfald.func.inc.sh
+          pushd download-cache
+            if [ ! -x shasum.py ]; then
+              curl -fsSRLo shasum.py 'https://github.com/meeb/tubesync/raw/refs/heads/main/tubesync/shasum.py'
+              chmod -v a+rx shasum.py
+            fi
+            if [ ! -x asfald-latest.exe ]; then
+              PATH="${PATH}:." download_asfald
+              unzip -ou asfald-x86_64-pc-windows-msvc.zip
+              mv -v -t . asfald-x86_64-pc-windows-msvc/asfald.exe
+              rm -v -fr asfald-x86_64-pc-windows-msvc asfald-x86_64-pc-windows-msvc.zip
+              PATH="${PATH}:." download_asfald latest
+              unzip -ou asfald-latest.zip
+              mv -v asfald-x86_64-pc-windows-msvc/asfald.exe asfald-latest.exe
+              rm -v -fr asfald-x86_64-pc-windows-msvc asfald-latest.zip
+            fi
+            ls -alR asfald*
+            declare -p PATH
+          popd
+
+          source .github/functions/bash/download_via.func.inc.sh
+          clear_download_via_manifest
+          
+          # Borrow the variables from the build script
+          awk '/^[A-Z]+=/ {print}' ./util/build-win32.sh | tee .build-win32-vars
+          source .build-win32-vars
+          rm -f .build-win32-vars
+
+          # Simple two-line declaration entries:
+          # download_via_github_api
+          ./download-cache/asfald-latest --verbose \
+            "https://github.com/openssl/openssl/releases/download/${OPENSSL}/${OPENSSL}.tar.gz"
+          # download_via_github_api
+          ./download-cache/asfald-latest --verbose \
+            "https://github.com/PCRE2Project/pcre2/releases/download/${PCRE}/${PCRE}.tar.gz"
+          # download_via_github_api
+          ./download-cache/asfald-latest --verbose \
+            "https://github.com/madler/zlib/releases/download/v${ZLIB#zlib-}/${ZLIB}.tar.gz"
+
+      - name: Downloads & Checksum Verifications
+        uses: actions/github-script@v9
+        env:
+          MANIFEST_PATH: '.download_manifest.jsonl'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const fs = require('fs');
+            const crypto = require('crypto');
+            const path = require('path');
+
+            const TARGET_MAIN_DOMAIN = 'github.com';
+            const TARGET_API_DOMAIN = `api.${TARGET_MAIN_DOMAIN}`;
+
+            async function fetchBytes(urlString, token) {
+              const parsedUrl = new URL(urlString);
+              const headers = { 'User-Agent': 'Universal-TS-Downloader' };
+              const protocol = parsedUrl.protocol.endsWith(':')
+                ? parsedUrl.protocol.slice(0, -1).toLowerCase()
+                : parsedUrl.protocol.toLowerCase();
+
+              const hostname = parsedUrl.hostname.toLowerCase();
+              const isSecure = 'https' === protocol;
+              const isGitHub = [TARGET_MAIN_DOMAIN, TARGET_API_DOMAIN].includes(hostname);
+              if (token && isSecure && isGitHub) {
+                headers['Authorization'] = `token ${token}`;
+              }
+
+              const response = await fetch(urlString, { headers });
+              if (!response.ok)
+                throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+              return Buffer.from(await response.arrayBuffer());
+              }
+
+              async function processDownload(task, token) {
+                const dlUrl = task.url;
+                const srcType = task.source.toLowerCase();
+                const srcVal = task.value;
+
+                const parsedDlUrl = new URL(dlUrl);
+                const filename = path.basename(parsedDlUrl.pathname);
+
+                const outName = (task.output && '' !== task.output.trim()) ? task.output : filename;
+
+                console.log(`\n[*] Processing task for: ${filename}`);
+                console.log(`[*] Sourcing verification signature via: ${srcType.toUpperCase()}`);
+                let expectedHash = '';
+
+                if (srcType === 'manual') {
+                  expectedHash = srcVal.trim().toLowerCase();
+                }
+                else if (srcType === 'remote_file') {
+                  console.log(`[+] Pulling remote hash manifest from external web resource: ${srcVal}`);
+                  const manifestBuffer = await fetchBytes(srcVal);
+                  const text = manifestBuffer.toString('utf-8');
+
+                  const matchLine = text.split(/\r?\n/).find(line => line.includes(filename));
+                  if (!matchLine)
+                    throw new Error(`Could not find a line containing '${filename}' in remote manifest.`);
+
+                  const hexMatch = matchLine.split(/\s+/).find(part => 64 === part.length);
+                  if (!hexMatch)
+                    throw new Error(`Could not locate a valid SHA256 string for '${filename}' in remote manifest.`);
+
+                  expectedHash = hexMatch.toLowerCase();
+                }
+                else if (srcType === 'github_api') {
+                  console.log(`[+] Scraping infrastructure asset metadata digest directly from GitHub API...`);
+
+                  if (parsedDlUrl.hostname.toLowerCase() !== TARGET_MAIN_DOMAIN) {
+                    throw new Error(`URL must be an official ${TARGET_MAIN_DOMAIN} release asset path to query API digests.`);
+                  }
+
+                  const pathParts = parsedDlUrl.pathname.split('/');
+                  if (pathParts[3] !== 'releases' || pathParts[4] !== 'download') {
+                    throw new Error("URL does not follow standard structural GitHub Release conventions.");
+                  }
+
+                  const owner = pathParts[1];
+                  const repo = pathParts[2];
+                  const tag = pathParts[5];
+
+                  const apiUrl = `https://${TARGET_API_DOMAIN}/repos/${owner}/${repo}/releases/tags/${tag}`;
+
+                  const apiBuffer = await fetchBytes(apiUrl, token);
+                  const releaseData = JSON.parse(apiBuffer.toString('utf-8'));
+                  const asset = releaseData.assets.find(a => a.name === filename);
+                  if (!asset)
+                    throw new Error(`Asset '${filename}' not found in GitHub infrastructure metadata.`);
+
+                  const digestField = asset.digest || '';
+
+                  if (digestField.includes('sha256:')) {
+                    expectedHash = digestField.split('sha256:')[1].trim().toLowerCase();
+                  } else {
+                    expectedHash = digestField.trim().toLowerCase();
+                  }
+
+                  if (!expectedHash)
+                    throw new Error("No cryptographic API digest available for this asset.");
+                } else {
+                  throw new Error(`Invalid validation source specified: ${srcType}`);
+                }
+
+                console.log(`[+] Authority Target Checksum resolved: ${expectedHash}`);
+                console.log(`[*] Downloading binary payload from network: ${dlUrl}`);
+
+                const fileBuffer = await fetchBytes(dlUrl, token);
+                fs.writeFileSync(outName, fileBuffer);
+
+                const computedHash = crypto.createHash('sha256').update(fileBuffer).digest('hex').toLowerCase();
+                console.log(`[+] Locally computed payload hash: ${computedHash}`);
+
+                if (computedHash !== expectedHash) {
+                  console.error(`[-] CRITICAL MATCH ERROR: Cryptographic verification mismatch! Destructive cleanup triggered.`);
+                  if (fs.existsSync(outName))
+                    fs.unlinkSync(outName);
+                  process.exit(1);
+                }
+
+                console.log(`[+] SUCCESS: Hash verification clean. Saved to relative path: ./${outName}`);
+              }
+
+              async function run() {
+                try {
+                  const manifestPath = process.env.MANIFEST_PATH || '.download_manifest.jsonl';
+                  if (!fs.existsSync(manifestPath)) {
+                    console.log(`[!] No download manifest file found at ${manifestPath}. Skipping processing loop.`);
+                    return;
+                  }
+
+                  const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+                  const lines = manifestContent.split(/\r?\n/).filter(line => '' !== line.trim());
+
+                  console.log(`[*] Found ${lines.length} task declarations in manifest. Starting sequential processing.`);
+                  const token = process.env.GITHUB_TOKEN;
+
+                  for (const line of lines) {
+                    const task = JSON.parse(line);
+                    await processDownload(task, token);
+                  }
+
+                  console.log("\n[+] ALL DOWNLOAD TASKS COMPLETED AND SECURELY VERIFIED PERFECTLY.");
+                } catch (error) {
+                  console.error(`\n[-] Global Execution Failure: ${error.message}`);
+                  process.exit(1);
+                }
+              }
+
+              run();
+
       - name: Create source bundle
         run: bash util/mirror-tarballs
 
@@ -63,3 +276,5 @@ jobs:
           cd "openresty-$(./util/ver)"
           bash ./util/build-win32.sh
           ./nginx.exe -V 2>&1
+          cd ..
+          bash -c 'source .github/functions/bash/cache.func.inc.sh ; cache_post'

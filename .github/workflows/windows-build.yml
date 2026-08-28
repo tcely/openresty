@@ -80,14 +80,13 @@ jobs:
             fi
             if [ ! -x asfald-latest.exe ]; then
               PATH="${PATH}:." download_asfald
-              unzip asfald-x86_64-pc-windows-msvc.zip
+              unzip -ou asfald-x86_64-pc-windows-msvc.zip
               mv -v -t . asfald-x86_64-pc-windows-msvc/asfald.exe
-              rm -v -f asfald-x86_64-pc-windows-msvc.zip
+              rm -v -fr asfald-x86_64-pc-windows-msvc asfald-x86_64-pc-windows-msvc.zip
               PATH="${PATH}:." download_asfald latest
-              unzip asfald-latest.zip
+              unzip -ou asfald-latest.zip
               mv -v asfald-x86_64-pc-windows-msvc/asfald.exe asfald-latest.exe
-              rm -v -f asfald-latest.zip
-              rmdir -v asfald-x86_64-pc-windows-msvc
+              rm -v -fr asfald-x86_64-pc-windows-msvc asfald-latest.zip
             fi
             ls -alR asfald*
             declare -p PATH

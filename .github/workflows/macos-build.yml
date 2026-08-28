@@ -74,7 +74,10 @@ jobs:
             curl -fsSRLo shasum.py 'https://github.com/meeb/tubesync/raw/refs/heads/main/tubesync/shasum.py'
             chmod -v a+rx shasum.py
           fi
-          ginstall -v -D -t ~/.local/bin -m 0755 shasum.py
+          install -d -v -m 0755 ~/.local/bin
+          install -v -m 0755 shasum.py ~/.local/bin/
+
+          #ginstall -v -D -t ~/.local/bin -m 0755 shasum.py
           
           if [ ! -x asfald-latest ]; then
             download_asfald

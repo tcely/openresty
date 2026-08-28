@@ -102,11 +102,13 @@ jobs:
 
           # Simple two-line declaration entries:
           # download_via_github_api
-          ./asfald-latest --verbose \
+          ./download-cache/asfald-latest --verbose \
             "https://github.com/openssl/openssl/releases/download/${OPENSSL}/${OPENSSL}.tar.gz"
-          download_via_github_api \
+          # download_via_github_api
+          ./download-cache/asfald-latest --verbose \
             "https://github.com/PCRE2Project/pcre2/releases/download/${PCRE}/${PCRE}.tar.gz"
-          download_via_github_api \
+          # download_via_github_api
+          ./download-cache/asfald-latest --verbose \
             "https://github.com/madler/zlib/releases/download/v${ZLIB#zlib-}/${ZLIB}.tar.gz"
 
       - name: Downloads & Checksum Verifications

@@ -5,8 +5,10 @@ set -euo pipefail
 script_dir="$(dirname "$0")"
 script_name="$(basename "$0")"
 
+# the current directory is one level down
 parent_dir="$(realpath -L -e "..")"
-script_dir="$(realpath -L -e "${parent_dir}/${script_dir}")"
+# a copy of this original source is running
+script_dir="$(realpath -L -e "${parent_dir}/util")"
 
 PCRE='pcre2-10.47'
 ZLIB='zlib-1.3.2'
@@ -14,14 +16,16 @@ OPENSSL='openssl-3.5.6'
 JOBS=12
 
 download_and_extract() {
-    local outfile="${parent_dir}/${1}.tar.gz"
+    local outfile="${1}.tar.gz"
     local url="${2}"
+    local finalpath="${parent_dir}/${outfile}"
 
-    if [ ! -s "${outfile}" ]; then
-        bash "${script_dir}/get-tarball" "${url}" -O "${outfile}"
+    if [ ! -s "${finalpath}" ]; then
+        bash "${script_dir}/get-tarball" "${url}" -O "${outfile}" &&
+            mv "${outfile}" "${finalpath}"
     fi
 
-    tar -xf "${outfile}"
+    tar -xf "${finalpath}"
 }
 
 [ ! -e objs ] || ( mv -f objs .remove.objs && rm -rf .remove.objs & )

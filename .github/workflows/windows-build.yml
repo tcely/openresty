@@ -72,6 +72,9 @@ jobs:
           # Explicitly declared as hidden for consistency across steps
           MANIFEST_PATH: '.download_manifest.jsonl'
         run: |
+          source .github/functions/bash/cache.func.inc.sh
+          cache_pre
+
           source .github/functions/bash/download_asfald.func.inc.sh
           pushd download-cache
             if [ ! -x shasum.py ]; then
@@ -271,3 +274,5 @@ jobs:
           cd "openresty-$(./util/ver)"
           bash ./util/build-win32.sh
           ./nginx.exe -V 2>&1
+          cd ..
+          bash -c 'source .github/functions/bash/cache.func.inc.sh ; cache_post'

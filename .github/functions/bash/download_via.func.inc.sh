@@ -13,6 +13,9 @@ _append_download_task() {
         "${url}" "${source}" "${value}" "${output}"
 } >> "${MANIFEST_PATH}"
 
+clear_download_via_manifest() {
+    :
+} > "${MANIFEST_PATH}"
 
 download_via_manual_hash() {
     local value="${1}"

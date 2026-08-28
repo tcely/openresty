@@ -25,8 +25,8 @@ jobs:
             toolchain: mingw-w64-x86_64-toolchain
           - host_arch: arm64
             runner: windows-11-arm
-            msystem: MINGW64
-            toolchain: mingw-w64-x86_64-toolchain
+            msystem: CLANGARM64
+            toolchain: mingw-w64-clang-aarch64-toolchain
 
     defaults:
       run:

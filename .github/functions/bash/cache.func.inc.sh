@@ -18,9 +18,9 @@ _cache_save_libs() {
     for s in "${d}/objs/lib"/zlib-*/libz.a "${d}/objs/lib"/pcre2-*/.libs/libpcre2*.a "${d}/objs/lib"/openssl-*/.openssl/lib/lib*.a
     do
         [ -f "${s}" ] || continue
-        mkdir -p "${CACHE_STATIC}/${s}"
-        rmdir "${CACHE_STATIC}/${s}"
-        mv -v "${s}" "${CACHE_STATIC}/${s}"
+        mkdir -p "${CACHE_STATIC_LIBS}/${s}"
+        rmdir "${CACHE_STATIC_LIBS}/${s}"
+        mv -v "${s}" "${CACHE_STATIC_LIBS}/${s}"
     done
 }
 
@@ -28,6 +28,7 @@ _cache_unpack_tar() {
     pushd "${CACHE_UNPACKED}"
     local _f ; for _f in "${CACHE_ARCHIVES}"/*.tar* ; do
         [ -s "${_f}" ] || continue
+        _f="$(realpath --relative-to=. "${_f}")"
         tar -xf "${_f}"
     done
     popd

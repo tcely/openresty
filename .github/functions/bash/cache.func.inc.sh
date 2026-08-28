@@ -18,8 +18,9 @@ _cache_save_libs() {
     for s in "${d}/objs/lib"/zlib-*/libz.a "${d}/objs/lib"/pcre2-*/.libs/libpcre2*.a "${d}/objs/lib"/openssl-*/.openssl/lib/lib*.a
     do
         [ -f "${s}" ] || continue
-        mkdir -p "${CACHE_STATIC_LIBS}/${s}"
-        rmdir "${CACHE_STATIC_LIBS}/${s}"
+        [ -e "${CACHE_STATIC_LIBS}/${s}" ] || {
+        mkdir -p "${CACHE_STATIC_LIBS}/${s}" &&
+        rmdir "${CACHE_STATIC_LIBS}/${s}" ; }
         mv -v "${s}" "${CACHE_STATIC_LIBS}/${s}"
     done
 }

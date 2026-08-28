@@ -109,7 +109,8 @@ download_asfald() {
             local latest_version="${resolved_version}"
             test -n "${latest_version}" || return 1
             
-            TMPDIR="$(realpath .)" \
+            local _temp="$(realpath .)"
+            TMPDIR="${_temp}" TMP="${_temp}" TEMP="${_temp}" \
                 ./asfald -o 'asfald-latest' -w -p '${path}/checksums.txt' -- "https://github.com/${owner}/${repo}/releases/latest/download/asfald-${arch}-${os}" && \
                 case "${os}" in (*.zip) mv -v 'asfald-latest' 'asfald-latest.zip' && return 0 ;; (*) chmod -v 'a+rx' 'asfald-latest' ;; esac
             local latest_digest="$(./asfald-latest --get-hash "https://github.com/${owner}/${repo}/releases/download/${latest_version}/asfald-${arch}-${os}")"

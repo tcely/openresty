@@ -61,8 +61,10 @@ jobs:
       - name: Cache downloaded tarballs
         uses: actions/cache@v6
         with:
-          path: download-cache
-          key: windows-build-${{ matrix.host_arch }}-${{ hashFiles('util/mirror-tarballs') }}
+          path: |
+            .openresty-cache
+            download-cache
+          key: windows-build-${{ matrix.host_arch }}-${{ github.run_id }}-${{ hashFiles('util/mirror-tarballs') }}
           restore-keys: |
             windows-build-${{ matrix.host_arch }}-
 

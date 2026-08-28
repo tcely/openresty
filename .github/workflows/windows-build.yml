@@ -56,7 +56,7 @@ jobs:
             ${{ matrix.toolchain }}
 
       - name: Create cache directory
-        run: bash -c 'mkdir -p download-cache'
+        run: bash -c 'mkdir -p download-cache; uname -s; uname -m;'
 
       - name: Cache downloaded tarballs
         uses: actions/cache@v6

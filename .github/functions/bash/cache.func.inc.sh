@@ -29,7 +29,7 @@ _cache_unpack_tar() {
     pushd "${CACHE_UNPACKED}"
     local _f ; for _f in "${CACHE_ARCHIVES}"/*.tar* ; do
         [ -s "${_f}" ] || continue
-        _f="$(realpath --relative-to=. "${_f}")"
+        _f="$(realpath --relative-to="${CACHE_ROOT}" "${_f}")"
         tar --force-local -xf "${_f}"
     done
     popd

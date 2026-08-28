@@ -25,13 +25,15 @@ _cache_save_libs() {
 }
 
 _cache_unpack_tar() {
+    set -x
     pushd "${CACHE_UNPACKED}"
     local _f ; for _f in "${CACHE_ARCHIVES}"/*.tar* ; do
         [ -s "${_f}" ] || continue
         _f="$(realpath --relative-to=. "${_f}")"
-        tar -xf "${_f}"
+        tar --force-local -xf "${_f}"
     done
     popd
+    set +x
 }
 
 

@@ -84,10 +84,10 @@ jobs:
               mv -v -t . asfald-x86_64-pc-windows-msvc/asfald.exe
               rm -v -f asfald-x86_64-pc-windows-msvc.zip
               PATH="${PATH}:." download_asfald latest
-              unzip asfald-x86_64-pc-windows-msvc.zip
-              mv -v unzip asfald-x86_64-pc-windows-msvc/asfald.exe asfald-latest.exe
-              rm -v -f unzip asfald-x86_64-pc-windows-msvc.zip
-              rmdir -v unzip asfald-x86_64-pc-windows-msvc
+              unzip asfald-latest.zip
+              mv -v asfald-x86_64-pc-windows-msvc/asfald.exe asfald-latest.exe
+              rm -v -f asfald-latest.zip
+              rmdir -v asfald-x86_64-pc-windows-msvc
             fi
             ls -alR asfald*
             declare -p PATH

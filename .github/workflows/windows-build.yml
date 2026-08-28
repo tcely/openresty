@@ -72,10 +72,6 @@ jobs:
       - name: Build OpenResty
         run: |
           uname -a
-          pwd
-          ls util
           cd "openresty-$(./util/ver)"
-          pwd
-          ls util
           bash ./util/build-win32.sh
           ./nginx.exe -V 2>&1

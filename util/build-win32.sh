@@ -34,10 +34,10 @@ mkdir -p objs/lib && pushd objs/lib
 download_and_extract "${OPENSSL}" "https://github.com/openssl/openssl/releases/download/${OPENSSL}/${OPENSSL}.tar.gz"
 download_and_extract "${ZLIB}" "http://zlib.net/${ZLIB}.tar.gz"
 download_and_extract "${PCRE}" "https://github.com/PCRE2Project/pcre2/releases/download/${PCRE}/${PCRE}.tar.gz"
-ls
+
+ls "${parent_dir}" .
 
 popd
-ls
 
 pushd "objs/lib/${OPENSSL}"
 patch -p1 < "${parent_dir}/patches/openssl-3.5.5-sess_set_get_cb_yield.patch"

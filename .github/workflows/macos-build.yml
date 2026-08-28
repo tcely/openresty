@@ -66,9 +66,10 @@ jobs:
 
       - name: Build PCRE2
         shell: bash
+        env:
+          GITHUB_API_KEY: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          declare -p PATH
-          PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
+          PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:/usr/local/opt/coreutils/libexec/gnubin:${PATH}"
           source .github/functions/bash/download_asfald.func.inc.sh
           pushd download-cache
 
@@ -97,7 +98,10 @@ jobs:
 
       - name: Build OpenSSL
         shell: bash
+        env:
+          GITHUB_API_KEY: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:/usr/local/opt/coreutils/libexec/gnubin:${PATH}"
           source .github/functions/bash/download_asfald.func.inc.sh
           pushd download-cache
 
@@ -105,7 +109,7 @@ jobs:
             curl -fsSRLo shasum.py 'https://github.com/meeb/tubesync/raw/refs/heads/main/tubesync/shasum.py'
             chmod -v a+rx shasum.py
           fi
-          ginstall -v -D -t ~/.local/bin -m 0755 shasum.py
+          install -v -D -t ~/.local/bin -m 0755 shasum.py
           
           if [ ! -x asfald-latest ]; then
             download_asfald
@@ -127,7 +131,10 @@ jobs:
 
       - name: Build OpenResty
         shell: bash
+        env:
+          GITHUB_API_KEY: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:/usr/local/opt/coreutils/libexec/gnubin:${PATH}"
           util/mirror-tarballs
           cd "openresty-$(./util/ver)"
           ./configure \

@@ -66,6 +66,28 @@ jobs:
           restore-keys: |
             windows-build-${{ matrix.host_arch }}-
 
+      - name: Specify Downloads
+        shell: bash
+        env:
+          # Explicitly declared as hidden for consistency across steps
+          MANIFEST_PATH: '.download_manifest.jsonl'
+        run: |
+          source .github/functions/bash/download_via.func.inc.sh
+          clear_download_via_manifest
+          
+          # Borrow the variables from the build script
+          awk '/^[A-Z]+=/ {print}' ./util/build-win32.sh | tee .build-win32-vars
+          source .build-win32-vars
+          rm -f .build-win32-vars
+
+          # Simple two-line declaration entries:
+          download_via_github_api \
+            "https://github.com/openssl/openssl/releases/download/${OPENSSL}/${OPENSSL}.tar.gz"
+          download_via_github_api \
+            "https://github.com/PCRE2Project/pcre2/releases/download/${PCRE}/${PCRE}.tar.gz"
+          download_via_github_api \
+            "https://github.com/madler/zlib/releases/download/v${ZLIB#zlib-}/${ZLIB}.tar.gz"
+
       - name: Execute All Downloads & Secure Verifications
         uses: actions/github-script@v7
         env:

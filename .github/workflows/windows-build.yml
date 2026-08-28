@@ -56,7 +56,7 @@ jobs:
             ${{ matrix.toolchain }}
 
       - name: Create cache directory
-        run: bash -c 'mkdir -p download-cache'
+        run: bash -c 'mkdir -p download-cache; declare -p PATH'
 
       - name: Cache downloaded tarballs
         uses: actions/cache@v6
@@ -74,7 +74,11 @@ jobs:
         run: |
           source .github/functions/bash/download_asfald.func.inc.sh
           pushd download-cache
-            download_asfald
+            if [ ! -x shasum.py ]; then
+              curl -fsSRLo shasum.py 'https://github.com/meeb/tubesync/raw/refs/heads/main/tubesync/shasum.py'
+              chmod -v a+rx shasum.py
+            fi
+            PATH="${PATH}:." download_asfald
             unzip asfald-*.zip
             ls -alR asfald-*
           popd

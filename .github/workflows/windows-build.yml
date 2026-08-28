@@ -56,7 +56,7 @@ jobs:
             ${{ matrix.toolchain }}
 
       - name: Create cache directory
-        run: bash -c 'mkdir -p download-cache; declare -p PATH'
+        run: bash -c 'mkdir -p download-cache'
 
       - name: Cache downloaded tarballs
         uses: actions/cache@v6
@@ -78,9 +78,19 @@ jobs:
               curl -fsSRLo shasum.py 'https://github.com/meeb/tubesync/raw/refs/heads/main/tubesync/shasum.py'
               chmod -v a+rx shasum.py
             fi
-            PATH="${PATH}:." download_asfald
-            unzip asfald-*.zip
-            ls -alR asfald-*
+            if [ ! -x asfald-latest.exe ]; then
+              PATH="${PATH}:." download_asfald
+              unzip asfald-x86_64-pc-windows-msvc.zip
+              mv -v -t . asfald-x86_64-pc-windows-msvc/asfald.exe
+              rm -v -f asfald-x86_64-pc-windows-msvc.zip
+              PATH="${PATH}:." download_asfald latest
+              unzip asfald-x86_64-pc-windows-msvc.zip
+              mv -v unzip asfald-x86_64-pc-windows-msvc/asfald.exe asfald-latest.exe
+              rm -v -f unzip asfald-x86_64-pc-windows-msvc.zip
+              rmdir -v unzip asfald-x86_64-pc-windows-msvc
+            fi
+            ls -alR asfald*
+            declare -p PATH
           popd
 
           source .github/functions/bash/download_via.func.inc.sh
@@ -92,7 +102,8 @@ jobs:
           rm -f .build-win32-vars
 
           # Simple two-line declaration entries:
-          download_via_github_api \
+          # download_via_github_api
+          ./asfald-latest --verbose \
             "https://github.com/openssl/openssl/releases/download/${OPENSSL}/${OPENSSL}.tar.gz"
           download_via_github_api \
             "https://github.com/PCRE2Project/pcre2/releases/download/${PCRE}/${PCRE}.tar.gz"
